@@ -19,7 +19,7 @@ export type Service = { id: string; img: string; title: string; short: string; i
 export const SERVICES: Service[] = [
   {
     id: "commercial",
-    img: "/work/c4-project-23.webp",
+    img: "/work/commercial/commercial-01.webp",
     title: "Commercial Cleaning",
     short: "Offices and workplaces kept immaculate, so clients and staff notice.",
     intro: "A clean workplace boosts productivity and impresses clients and staff alike.",
@@ -35,7 +35,7 @@ export const SERVICES: Service[] = [
   },
   {
     id: "residential",
-    img: "/work/c4-project-03.webp",
+    img: "/work/residential/residential-01.webp",
     title: "Residential Deep Cleaning",
     short: "Thorough top-to-bottom cleaning that refreshes your whole home.",
     intro: "A thorough, top-to-bottom clean that refreshes every room of your home.",
@@ -51,7 +51,7 @@ export const SERVICES: Service[] = [
   },
   {
     id: "window",
-    img: "/work/c4-project-11.webp",
+    img: "/work/commercial/commercial-02.webp",
     title: "Window & Facade Cleaning",
     short: "Streak-free glass and facades for a brighter, polished look.",
     intro: "Streak-free window and facade cleaning for a brighter, more polished property.",
@@ -66,7 +66,7 @@ export const SERVICES: Service[] = [
   },
   {
     id: "post-construction",
-    img: "/work/c4-project-31.webp",
+    img: "/work/residential/residential-02.webp",
     title: "Post-Construction Cleaning",
     short: "Debris, dust and fine particles gone, so the space is move-in ready.",
     intro: "After construction or renovation, we clear debris, dust and fine particles for a move-in-ready finish.",
@@ -136,26 +136,19 @@ export const PLANS = [
   { name: "1 Kanal + Basement", price: "160,000", note: "Basement included", items: [...PLAN_ITEMS, "Basement cleaned top to bottom"] },
 ];
 
-// Real project photos from c4cleanings.com, stored locally in /public/work.
-export const WORK = [
-  // latest completed homes (newest first)
-  ...Array.from({ length: 34 }, (_, i) => ({
-    src: `/work/c4-project-${String(i + 1).padStart(2, "0")}.webp`,
-    tag: "Residential",
+// Project photos, stored locally in /public/work/residential and /public/work/commercial.
+// Numbered newest first, so the first images are the ones featured in the home strip.
+const pad = (n: number) => String(n).padStart(2, "0");
+
+export const WORK: { src: string; tag: "Residential" | "Commercial"; place: string }[] = [
+  ...Array.from({ length: 49 }, (_, i) => ({
+    src: `/work/residential/residential-${pad(i + 1)}.webp`,
+    tag: "Residential" as const,
     place: "Luxury home, full house clean",
   })),
-  // earlier projects
-  { src: "/work/w01.jpeg", tag: "Residential", place: "Upper Mall Road" },
-  { src: "/work/c4-project-23.webp", tag: "Commercial", place: "Boardroom & offices" },
-  { src: "/work/c4-project-31.webp", tag: "Residential", place: "Upper Mall Road" },
-  { src: "/work/w04.jpeg", tag: "Residential", place: "Upper Mall Road" },
-  { src: "/work/w05.jpeg", tag: "Commercial", place: "Offices" },
-  { src: "/work/w06.jpeg", tag: "Residential", place: "Upper Mall Road" },
-  { src: "/work/w07.jpeg", tag: "Residential", place: "Upper Mall Road" },
-  { src: "/work/w08.jpeg", tag: "Commercial", place: "Offices" },
-  { src: "/work/w09.jpeg", tag: "Residential", place: "Upper Mall Road" },
-  { src: "/work/w10.jpeg", tag: "Commercial", place: "Offices" },
-  { src: "/work/c4-project-03.webp", tag: "Residential", place: "Upper Mall Road" },
-  { src: "/work/w12.jpeg", tag: "Residential", place: "Upper Mall Road" },
-  { src: "/work/c4-project-11.webp", tag: "Commercial", place: "Offices" },
+  ...Array.from({ length: 15 }, (_, i) => ({
+    src: `/work/commercial/commercial-${pad(i + 1)}.webp`,
+    tag: "Commercial" as const,
+    place: "Office and commercial clean",
+  })),
 ];
