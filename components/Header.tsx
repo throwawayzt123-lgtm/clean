@@ -65,9 +65,9 @@ export default function Header({ revealed }: { revealed: boolean }) {
         }}
       >
         <div
-          className="pointer-events-auto flex w-full max-w-[min(100%,820px)] items-center justify-between gap-1.5 md:gap-2 rounded-full border p-1 md:p-2 backdrop-blur-xl"
+          className="pointer-events-auto flex w-full max-w-[min(100%,820px)] items-center justify-between gap-1.5 md:gap-2 rounded-full border p-1 md:p-2"
           style={{
-            background: scrolled || open ? "rgba(8,8,8,0.82)" : "rgba(8,8,8,0.6)",
+            background: scrolled || open ? "rgba(8,8,8,0.92)" : "rgba(8,8,8,0.78)",
             borderColor: scrolled ? "rgba(223,254,18,0.28)" : "rgba(255,255,255,0.14)",
             boxShadow: scrolled ? "0 10px 40px rgba(0,0,0,0.55), 0 0 30px rgba(223,254,18,0.07)" : "none",
             transition: "background 0.3s, border-color 0.3s, box-shadow 0.3s",
@@ -75,7 +75,7 @@ export default function Header({ revealed }: { revealed: boolean }) {
         >
           <SmartLink href="/" onClick={() => setOpen(false)} className="flex items-center gap-2.5 shrink-0" aria-label="C4 Cleaning, home">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/c4logo.png" alt="" className="h-9 md:h-11 w-auto rounded-lg md:rounded-xl" />
+            <img src="/c4logo-sm.webp" width={256} height={197} decoding="async" alt="" className="h-9 md:h-11 w-auto rounded-lg md:rounded-xl" />
           </SmartLink>
 
           <nav className="hidden lg:flex items-center gap-1">

@@ -162,7 +162,7 @@ export default function Footer() {
         <div className="mt-20 md:mt-28 pt-7 border-t border-white/10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
           <div className="flex flex-wrap items-center gap-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/c4logo.png" alt="C4 Cleaning" className="h-10 w-auto rounded-lg" />
+            <img src="/c4logo-sm.webp" width={256} height={197} decoding="async" alt="C4 Cleaning" className="h-10 w-auto rounded-lg" />
             <span className="w-1.5 h-1.5 rounded-full bg-volt" />
             <span className="font-mono text-[11px] text-white/40">© 2026 C4 Cleaning — {BRAND.address}. {BRAND.availability}.</span>
           </div>

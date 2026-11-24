@@ -1,9 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, JetBrains_Mono, Manrope } from "next/font/google";
 import "./globals.css";
-import FxCanvas from "@/components/FxCanvas";
+import Effects from "@/components/Effects";
 import WhatsAppButton from "@/components/WhatsAppButton";
-import LenisProvider from "@/components/LenisProvider";
 import JsonLd from "@/components/JsonLd";
 import { SITE_DESCRIPTION, SITE_KEYWORDS, SITE_NAME, SITE_URL, businessSchema, websiteSchema } from "@/lib/seo";
 
@@ -23,7 +22,7 @@ export const metadata: Metadata = {
   category: "Cleaning services",
   alternates: { canonical: "/" },
   formatDetection: { telephone: true, email: true, address: true },
-  icons: { icon: "/c4logo.png", apple: "/c4logo.png" },
+  icons: { icon: "/c4logo-sm.png", apple: "/c4logo-sm.png" },
   openGraph: {
     type: "website",
     locale: "en_PK",
@@ -50,8 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en-PK" className={`${display.variable} ${body.variable} ${mono.variable}`}>
       <body>
         <JsonLd data={[businessSchema, websiteSchema]} />
-        <LenisProvider />
-        <FxCanvas />
+        <Effects />
         <WhatsAppButton />
         {children}
       </body>

@@ -79,7 +79,7 @@ export default function Loader({ ready, onDone }: { ready: boolean; onDone: () =
       aria-live="polite"
     >
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src="/c4logo.png" alt="C4 Cleaning" className="w-20 h-auto rounded-2xl" style={item(0)} />
+      <img src="/c4logo-sm.webp" width={256} height={197} decoding="async" alt="C4 Cleaning" className="w-20 h-auto rounded-2xl" style={item(0)} />
       {/* C4 = the four C's: animated full form */}
       <div className="flex flex-wrap justify-center gap-x-3 sm:gap-x-5 gap-y-1 px-6 text-center" aria-label="Crystal Clear Cleaning Company">
         {FULL.map((w, wi) => (

@@ -36,7 +36,7 @@ export default function FxCanvas() {
 
     let w = 0, h = 0, dpr = 1;
     const resize = () => {
-      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      dpr = Math.min(window.devicePixelRatio || 1, 1.25);
       w = window.innerWidth;
       h = window.innerHeight;
       canvas.width = Math.floor(w * dpr);
@@ -52,7 +52,7 @@ export default function FxCanvas() {
     const sparks: Spark[] = [];
     const trail: Trail[] = [];
     const isMobile = w < 768;
-    const motes: Mote[] = Array.from({ length: isMobile ? 18 : 40 }, () => ({
+    const motes: Mote[] = Array.from({ length: isMobile ? 0 : 40 }, () => ({
       x: Math.random() * w,
       y: Math.random() * h,
       z: 0.3 + Math.random() * 0.9,
@@ -69,6 +69,46 @@ export default function FxCanvas() {
     const COLORS = [
       [223, 254, 18], [223, 254, 18], [239, 255, 105], [169, 201, 0], [235, 235, 235], [60, 60, 60],
     ];
+    // Pre-rendered ball sprites: one small offscreen canvas per colour/glass combo, drawn with drawImage
+    // (a per-ball radial gradient every frame is far more expensive).
+    const SPR_R = 48, SPR_M = 4;
+    const sprites = new Map<number, HTMLCanvasElement>();
+    const getSprite = (col: number, glass: boolean) => {
+      const key = col * 2 + (glass ? 1 : 0);
+      const hit = sprites.get(key);
+      if (hit) return hit;
+      const S = (SPR_R + SPR_M) * 2;
+      const s = document.createElement("canvas");
+      s.width = s.height = S;
+      const c = s.getContext("2d");
+      if (c) {
+        const [cr, cg, cb] = COLORS[col];
+        const cx = S / 2, cy = S / 2, R = SPR_R;
+        const g = c.createRadialGradient(cx - R * 0.35, cy - R * 0.4, R * 0.1, cx, cy, R);
+        if (glass) {
+          g.addColorStop(0, "rgba(255,255,255,0.75)");
+          g.addColorStop(0.55, `rgba(${cr},${cg},${cb},0.18)`);
+          g.addColorStop(1, `rgba(${cr},${cg},${cb},0.42)`);
+        } else {
+          g.addColorStop(0, `rgba(${Math.min(255, cr + 90)},${Math.min(255, cg + 90)},${Math.min(255, cb + 90)},0.98)`);
+          g.addColorStop(0.55, `rgba(${cr},${cg},${cb},0.95)`);
+          g.addColorStop(1, `rgba(${cr * 0.55 | 0},${cg * 0.55 | 0},${cb * 0.55 | 0},0.95)`);
+        }
+        c.beginPath();
+        c.arc(cx, cy, R, 0, Math.PI * 2);
+        c.fillStyle = g;
+        c.fill();
+        c.lineWidth = 1.8;
+        c.strokeStyle = glass ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)";
+        c.stroke();
+        c.beginPath();
+        c.ellipse(cx - R * 0.32, cy - R * 0.4, R * 0.28, R * 0.17, -0.6, 0, Math.PI * 2);
+        c.fillStyle = "rgba(255,255,255,0.85)";
+        c.fill();
+      }
+      sprites.set(key, s);
+      return s;
+    };
     const CAP = isMobile ? 7 : 22;
     const addBall = (x: number, y: number, vx: number, vy: number, r?: number) => {
       balls.push({
@@ -132,6 +172,8 @@ export default function FxCanvas() {
 
     // ---- loop ----
     let raf = 0;
+    let lastTick = 0;
+    let drewLast = false;
     let lastScroll = window.scrollY;
     let scrollV = 0;
     let curtainArmed = true;
@@ -158,6 +200,10 @@ export default function FxCanvas() {
 
     const tick = () => {
       raf = requestAnimationFrame(tick);
+      // frame cap (~70fps): the physics is per-frame, so 120/144Hz screens would run it 2x too fast and too heavy
+      const nowMs = performance.now();
+      if (nowMs - lastTick < 13) return;
+      lastTick = nowMs;
       // other pages have no scroll-driven intro: the bubble/dust effects are simply always on
       const progress = onHome.current ? control.progress : 3.5;
       const f = smooth(2.9, 3.5, progress);
@@ -193,6 +239,13 @@ export default function FxCanvas() {
       cursor.lx = cursor.x;
       cursor.ly = cursor.y;
 
+      // nothing to draw (typical on phones): leave the canvas alone instead of clearing it every frame
+      const busy = balls.length > 0 || trail.length > 0 || sparks.length > 0 || (motes.length > 0 && f > 0.01);
+      if (!busy) {
+        if (drewLast) { ctx.clearRect(0, 0, w, h); drewLast = false; }
+        return;
+      }
+      drewLast = true;
       ctx.clearRect(0, 0, w, h);
 
       // ---- dust motes: swept by scroll, wiped by cursor ----
@@ -301,34 +354,13 @@ export default function FxCanvas() {
         const sc = Math.min(1, left / 40) * Math.min(1, 0.4 + p.life / 12);
         const r = p.r * sc;
         if (r < 0.5) continue;
-        const [cr, cg, cb] = COLORS[p.col];
         // soft contact shadow
         ctx.beginPath();
         ctx.ellipse(p.x, Math.min(h - 1, p.y + r * 0.95), r * 0.8, r * 0.18, 0, 0, Math.PI * 2);
         ctx.fillStyle = "rgba(223,254,18,0.06)";
         ctx.fill();
-        const g = ctx.createRadialGradient(p.x - r * 0.35, p.y - r * 0.4, r * 0.1, p.x, p.y, r);
-        if (p.glass) {
-          g.addColorStop(0, "rgba(255,255,255,0.75)");
-          g.addColorStop(0.55, `rgba(${cr},${cg},${cb},0.18)`);
-          g.addColorStop(1, `rgba(${cr},${cg},${cb},0.42)`);
-        } else {
-          g.addColorStop(0, `rgba(${Math.min(255, cr + 90)},${Math.min(255, cg + 90)},${Math.min(255, cb + 90)},0.98)`);
-          g.addColorStop(0.55, `rgba(${cr},${cg},${cb},0.95)`);
-          g.addColorStop(1, `rgba(${cr * 0.55 | 0},${cg * 0.55 | 0},${cb * 0.55 | 0},0.95)`);
-        }
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = g;
-        ctx.fill();
-        ctx.lineWidth = 1.2;
-        ctx.strokeStyle = p.glass ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)";
-        ctx.stroke();
-        // glossy highlight
-        ctx.beginPath();
-        ctx.ellipse(p.x - r * 0.32, p.y - r * 0.4, r * 0.28, r * 0.17, -0.6, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(255,255,255,0.85)";
-        ctx.fill();
+        const half = (SPR_R + SPR_M) * (r / SPR_R);
+        ctx.drawImage(getSprite(p.col, p.glass), p.x - half, p.y - half, half * 2, half * 2);
       }
 
       // ---- cursor soap-bubble trail ----
@@ -354,8 +386,6 @@ export default function FxCanvas() {
         ctx.save();
         ctx.translate(s.x, s.y);
         ctx.rotate(s.rot + k * 0.8);
-        ctx.shadowColor = "rgba(255,255,255,0.9)";
-        ctx.shadowBlur = 10;
         ctx.strokeStyle = `rgba(255,255,255,${0.95 * pulse})`;
         ctx.lineWidth = 1.6;
         ctx.lineCap = "round";

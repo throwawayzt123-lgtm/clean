@@ -72,7 +72,7 @@ export default function ContactForm() {
   }
 
   return (
-    <form onSubmit={onSubmit} className="rounded-[1.75rem] border border-white/10 bg-[#0c0c0c]/90 backdrop-blur-md p-6 md:p-9 grid grid-cols-1 sm:grid-cols-2 gap-5" noValidate={false}>
+    <form onSubmit={onSubmit} className="rounded-[1.75rem] border border-white/10 bg-[#0c0c0c]/90 p-6 md:p-9 grid grid-cols-1 sm:grid-cols-2 gap-5" noValidate={false}>
       <div>
         <label htmlFor="cf-name" className={LBL} style={{ letterSpacing: "0.18em" }}>Full name *</label>
         <input id="cf-name" name="name" required maxLength={80} autoComplete="name" placeholder="Your name" className={FIELD} />

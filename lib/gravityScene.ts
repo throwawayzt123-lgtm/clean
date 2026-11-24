@@ -18,6 +18,7 @@ type Ball = {
   role: Role;
   isGlass: boolean;
   visualScale: number;
+  baseOpacity: number;
   color: THREE.Color;
   restPosition: THREE.Vector3;
   shapeTarget: THREE.Vector3;
@@ -74,30 +75,24 @@ export function createGravityScene(opts: {
   const camera = new THREE.PerspectiveCamera(38, container.clientWidth / container.clientHeight, 0.1, 100);
   camera.position.set(0, 0, 11);
 
-  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: "high-performance" });
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  // Performance: capped pixel ratio (adaptively lowered below if frames run slow), no shadow pass,
+  // and no MSAA on dense screens where it adds cost without visible benefit.
+  // Device tier: phones and weak machines (<=4 cores, <=4 GB RAM, data-saver) get a lighter scene.
+  const nav = navigator as Navigator & { deviceMemory?: number; connection?: { saveData?: boolean } };
+  const lite = window.innerWidth < 768 || (nav.hardwareConcurrency || 8) <= 4 || (nav.deviceMemory || 8) <= 4 || !!nav.connection?.saveData;
+  let pr = Math.min(window.devicePixelRatio, lite ? 1 : 1.5);
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: pr < 1.5, alpha: true, powerPreference: "high-performance" });
+  renderer.setPixelRatio(pr);
   renderer.setSize(container.clientWidth, container.clientHeight);
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
   renderer.toneMappingExposure = 1.15;
-  renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.enabled = false;
 
   const hemiLight = new THREE.HemisphereLight(0xffffff, new THREE.Color(ballColor), 1.6);
   scene.add(hemiLight);
 
   const keyLight = new THREE.DirectionalLight(0xffffff, 1.4);
   keyLight.position.set(-6, 10, 8);
-  keyLight.castShadow = true;
-  keyLight.shadow.mapSize.width = 2048;
-  keyLight.shadow.mapSize.height = 2048;
-  keyLight.shadow.camera.near = 0.5;
-  keyLight.shadow.camera.far = 30;
-  keyLight.shadow.camera.left = -8;
-  keyLight.shadow.camera.right = 8;
-  keyLight.shadow.camera.top = 8;
-  keyLight.shadow.camera.bottom = -8;
-  keyLight.shadow.bias = -0.0003;
-  keyLight.shadow.radius = 12.0;
   scene.add(keyLight);
 
   const rimLight = new THREE.DirectionalLight(0xffffff, 1.25);
@@ -106,11 +101,12 @@ export function createGravityScene(opts: {
 
   const frontLight = new THREE.DirectionalLight(0xffffff, 0.4);
   frontLight.position.set(0, 0, 11);
-  scene.add(frontLight);
+  const lowEnd = lite; // fewer lights = cheaper shading for every sphere
+  if (!lowEnd) scene.add(frontLight);
 
   const sideBounceLight = new THREE.DirectionalLight(0xffffff, 0.3);
   sideBounceLight.position.set(-9, -2, 4);
-  scene.add(sideBounceLight);
+  if (!lowEnd) scene.add(sideBounceLight);
 
   // --- viewport frustum bounds ---
   let viewportWidth = 10;
@@ -123,7 +119,7 @@ export function createGravityScene(opts: {
   updateFrustumBounds();
 
   const isMobile = window.innerWidth < 768;
-  const ballCount = isMobile ? 34 : 96;
+  const ballCount = isMobile ? 26 : lite ? 48 : 80;
 
   // --- palette ---
   const palette = getDynamicColors(ballColor);
@@ -140,7 +136,7 @@ export function createGravityScene(opts: {
   };
 
   // --- spheres ---
-  const sphereGeometry = new THREE.SphereGeometry(1, 48, 48);
+  const sphereGeometry = lite ? new THREE.SphereGeometry(1, 20, 14) : new THREE.SphereGeometry(1, 32, 22);
   const balls: Ball[] = [];
   for (let i = 0; i < ballCount; i++) {
     let radius = 0.33;
@@ -156,26 +152,25 @@ export function createGravityScene(opts: {
     let color = palette.medium;
     let sphereMat: THREE.MeshPhysicalMaterial;
     let role: Role = "medium";
+    let baseOpacity = 1;
 
-    const isGlass = Math.random() < 0.22 && !isBlack;
+    const isGlass = Math.random() < (lite ? 0.12 : 0.22) && !isBlack;
 
     if (isGlass) {
+      // No `transmission`: it forces a second full-scene render pass every frame. A glossy translucent
+      // shell looks like glass here at a fraction of the cost.
+      baseOpacity = 0.62;
       sphereMat = new THREE.MeshPhysicalMaterial({
         color: palette.glass,
-        roughness: 0.08,
+        roughness: 0.1,
         metalness: 0.0,
-        clearcoat: 1.0,
-        clearcoatRoughness: 0.03,
-        transmission: 0.95,
-        ior: 1.485,
-        thickness: 2.2,
-        specularColor: new THREE.Color("#ffffff"),
-        specularIntensity: 1.0,
-        attenuationColor: palette.pastel,
-        attenuationDistance: 1.0,
+        clearcoat: lite ? 0 : 1.0,
+        clearcoatRoughness: 0.04,
         emissive: palette.glass,
-        emissiveIntensity: 0.12,
+        emissiveIntensity: 0.14,
         transparent: true,
+        opacity: baseOpacity,
+        depthWrite: false,
       });
       color = palette.glass;
       role = "glass";
@@ -190,7 +185,7 @@ export function createGravityScene(opts: {
         color: chosenColor,
         roughness: 0.44,
         metalness: 0.0,
-        clearcoat: 0.24,
+        clearcoat: lite ? 0 : 0.24,
         clearcoatRoughness: 0.35,
         emissive: isBlack ? new THREE.Color("#000000") : chosenColor,
         emissiveIntensity: isBlack ? 0.0 : 0.08,
@@ -202,8 +197,6 @@ export function createGravityScene(opts: {
     const group = new THREE.Group();
     const sphereMesh = new THREE.Mesh(sphereGeometry, sphereMat);
     sphereMesh.scale.setScalar(radius);
-    sphereMesh.castShadow = true;
-    sphereMesh.receiveShadow = true;
     group.add(sphereMesh);
     scene.add(group);
 
@@ -219,6 +212,7 @@ export function createGravityScene(opts: {
       role,
       isGlass,
       visualScale: radius,
+      baseOpacity,
       color,
       restPosition: new THREE.Vector3(0, 0, 0),
       shapeTarget: new THREE.Vector3(),
@@ -292,7 +286,7 @@ export function createGravityScene(opts: {
   };
 
   // --- residue: iridescent soap bubbles that keep drifting over the whole page after the field is released ---
-  const residueCount = isMobile ? 8 : 26;
+  const residueCount = isMobile ? 6 : lite ? 12 : 26;
   const residueGeo = new THREE.SphereGeometry(1, 24, 24);
   const residueMat = new THREE.MeshPhysicalMaterial({
     color: new THREE.Color("#ffffff"),
@@ -300,7 +294,7 @@ export function createGravityScene(opts: {
     metalness: 0.0,
     clearcoat: 1.0,
     clearcoatRoughness: 0.04,
-    iridescence: 1.0,
+    iridescence: lite ? 0 : 1.0,
     iridescenceIOR: 1.35,
     iridescenceThicknessRange: [200, 520],
     transparent: true,
@@ -326,6 +320,9 @@ export function createGravityScene(opts: {
   });
   const residueDummy = new THREE.Object3D();
 
+  // Compile every shader up front, while the loader is on screen, so no frame stalls later when a new material first draws.
+  try { renderer.compileAsync?.(scene, camera).catch(() => {}); } catch { /* compile on first draw instead */ }
+
   // --- loop ---
   let animationFrameId = 0;
   let disposed = false;
@@ -333,6 +330,10 @@ export function createGravityScene(opts: {
   let localStarted = false;
   let entranceStart = 0;
   let reportedReady = false;
+  let lastFrameMs = 0;
+  let frameCount = 0;
+  let slowFrames = 0;
+  let ballsHidden = false;
 
   const diffVec = new THREE.Vector3();
   const collideDiff = new THREE.Vector3();
@@ -345,6 +346,23 @@ export function createGravityScene(opts: {
   const simulateAndRender = () => {
     if (disposed) return;
     animationFrameId = requestAnimationFrame(simulateAndRender);
+
+    // Frame cap (~70fps max): 120/144Hz laptops would otherwise run the whole simulation 2x as often.
+    const nowMs = performance.now();
+    const dtMs = nowMs - lastFrameMs;
+    // once the spheres have left the screen only a few slow bubbles remain: 30fps is plenty
+    if (dtMs < (ballsHidden ? 30 : 12.5)) return;
+    lastFrameMs = nowMs;
+
+    // Adaptive quality: if frames keep running slow, lower the render resolution step by step.
+    if (dtMs > 32 && dtMs < 400) slowFrames++;
+    else if (slowFrames > 0) slowFrames--;
+    if (slowFrames > 40 && pr > 0.75) {
+      pr = Math.max(0.75, pr - 0.25);
+      renderer.setPixelRatio(pr);
+      renderer.setSize(container.clientWidth, container.clientHeight);
+      slowFrames = 0;
+    }
 
     const time = clock.getElapsedTime();
     clock.getDelta();
@@ -397,6 +415,16 @@ export function createGravityScene(opts: {
 
     const camZ = camera.position.z;
     const clusterActive = Math.max(heroF, entranceT < 1 ? 1 : 0);
+
+    // Once the field has flown past the camera, stop simulating and drawing the spheres entirely.
+    const ballsGone = flyF > 0.999;
+    if (ballsGone !== ballsHidden) {
+      for (const b of balls) b.meshGroup.visible = !ballsGone;
+      ballsHidden = ballsGone;
+    }
+
+    sim: {
+    if (ballsGone) break sim;
 
     // 1. ACCELERATIONS
     for (let i = 0; i < balls.length; i++) {
@@ -459,7 +487,7 @@ export function createGravityScene(opts: {
       b.material.color.copy(c);
       if (!isBlack) b.material.emissive.copy(c);
 
-      b.material.opacity = flyF > 0.001 ? 1 - smoothstep(camZ - 2.6, camZ - 0.3, b.position.z) : 1;
+      b.material.opacity = b.baseOpacity * (flyF > 0.001 ? 1 - smoothstep(camZ - 2.6, camZ - 0.3, b.position.z) : 1);
 
       const targetVis = b.radius * (1 - (1 - shapeScale) * shapeF);
       b.visualScale += (targetVis - b.visualScale) * 0.12;
@@ -541,6 +569,7 @@ export function createGravityScene(opts: {
       }
       b.meshGroup.position.copy(b.position);
     }
+    } // end sim
 
     // 4. RESIDUE BUBBLES (fade in as the field leaves, then persist with scroll parallax)
     const residueF = smoothstep(2.9, 3.6, progress);
@@ -581,7 +610,9 @@ export function createGravityScene(opts: {
       residueMesh.visible = false;
     }
 
-    renderer.render(scene, camera);
+    // phones: simulate every tick but only draw every other one (halves the CPU cost of rendering)
+    frameCount++;
+    if (!lite || (frameCount & 1) === 0 || !reportedReady) renderer.render(scene, camera);
     if (!reportedReady) { reportedReady = true; onReady(); }
   };
 

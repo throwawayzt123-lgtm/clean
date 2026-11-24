@@ -10,7 +10,7 @@ type Props = {
   style?: CSSProperties;
 };
 
-// Scroll-reveal: translateY(42px) + blur(8px) -> rest over 1.5s; triggers once at ~45% visible.
+// Scroll-reveal: translateY(42px) + fade -> rest over 1.5s; triggers once at ~45% visible.
 export default function Reveal({ children, delay = 0, className, as: Tag = "div", style }: Props) {
   const ref = useRef<HTMLElement>(null);
   const [shown, setShown] = useState(false);
@@ -42,9 +42,8 @@ export default function Reveal({ children, delay = 0, className, as: Tag = "div"
       style={{
         opacity: shown ? 1 : 0,
         transform: shown ? "translateY(0)" : "translateY(42px)",
-        filter: shown ? "blur(0px)" : "blur(8px)",
-        transition: `opacity 1.5s ${EASE} ${delay}s, transform 1.5s ${EASE} ${delay}s, filter 1.5s ${EASE} ${delay}s`,
-        willChange: "opacity, transform, filter",
+        transition: `opacity 1.5s ${EASE} ${delay}s, transform 1.5s ${EASE} ${delay}s`,
+        willChange: shown ? "auto" : "opacity, transform",
         ...style,
       }}
     >

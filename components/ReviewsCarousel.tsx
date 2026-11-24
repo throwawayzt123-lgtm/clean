@@ -27,7 +27,7 @@ export default function ReviewsCarousel() {
       onMouseLeave={() => setPaused(false)}
     >
       {/* featured: sliding carousel (swipe / drag, arrows, dots, auto-advance) */}
-      <div className="lg:col-span-8 relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0c0c0c]/90 backdrop-blur-md min-h-[420px] md:min-h-[500px] flex flex-col select-none">
+      <div className="lg:col-span-8 relative overflow-hidden rounded-[2rem] border border-white/10 bg-[#0c0c0c]/90 min-h-[420px] md:min-h-[500px] flex flex-col select-none">
         <div className="pointer-events-none absolute -top-24 -right-24 w-80 h-80 rounded-full" style={{ background: "radial-gradient(circle, rgba(223,254,18,0.16), transparent 65%)", animation: "float-glow 9s ease-in-out infinite" }} />
         <span
           className="pointer-events-none select-none absolute right-6 md:right-10 top-0 font-display font-bold leading-none"

@@ -25,9 +25,11 @@ export function ServiceStrips() {
     let raf = 0;
     const update = () => {
       raf = 0;
+      const oRect = outer.getBoundingClientRect();
+      if (oRect.top > window.innerHeight * 1.5 || oRect.bottom < -window.innerHeight * 0.5) return; // far off-screen
       const stick = parseFloat(getComputedStyle(inner).top) || 0;
       const total = Math.max(1, outer.offsetHeight - inner.offsetHeight);
-      const p = Math.min(0.999, Math.max(0, (stick - outer.getBoundingClientRect().top) / total));
+      const p = Math.min(0.999, Math.max(0, (stick - oRect.top) / total));
       const stage = Math.min(N - 1, Math.floor(p * N));
       if (stage !== lastStage.current) {
         lastStage.current = stage;
@@ -193,7 +195,7 @@ function ExplorerView({ active, setActive, pinned }: { active: number; setActive
       </div>
 
       {/* panel */}
-      <div className="lg:col-span-8 relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0c0c0c]/90 backdrop-blur-md">
+      <div className="lg:col-span-8 relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[#0c0c0c]/90">
         <div className={`relative overflow-hidden ${pinned ? "h-[22svh] lg:h-[26svh]" : "h-52 sm:h-72"}`}>
           {SERVICES.map((x, i) => (
             <Photo
@@ -272,6 +274,7 @@ export function ServiceExplorer() {
     const update = () => {
       raf = 0;
       const rect = outer.getBoundingClientRect();
+      if (rect.top > window.innerHeight * 1.5 || rect.bottom < -window.innerHeight * 0.5) return; // far off-screen
       const total = Math.max(1, outer.offsetHeight - window.innerHeight);
       const p = Math.min(0.999, Math.max(0, -rect.top / total));
       setActive(Math.min(N - 1, Math.floor(p * N)));

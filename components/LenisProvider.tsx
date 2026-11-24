@@ -7,6 +7,9 @@ import Lenis from "lenis";
 export default function LenisProvider() {
   useEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    // touch devices already scroll natively and smoothly; weak machines are faster without the extra smoothing loop
+    const weak = (navigator.hardwareConcurrency || 8) <= 4;
+    if (window.matchMedia("(pointer: coarse)").matches || weak) return;
     const lenis = new Lenis({ lerp: 0.1, wheelMultiplier: 1, smoothWheel: true, anchors: true });
 
     let raf = 0;

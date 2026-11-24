@@ -19,7 +19,7 @@ export function Card({ children, className = "", featured = false }: { children:
     <div
       onPointerMove={onMove}
       className={`group/card relative overflow-hidden rounded-[1.75rem] border transition-all duration-500 hover:-translate-y-1.5 ${
-        featured ? "bg-volt text-black border-volt" : "bg-[#0c0c0c]/90 backdrop-blur-md border-white/10 hover:border-volt/60 text-white"
+        featured ? "bg-volt text-black border-volt" : "bg-[#0c0c0c]/90 border-white/10 hover:border-volt/60 text-white"
       } ${className}`}
     >
       {!featured && (

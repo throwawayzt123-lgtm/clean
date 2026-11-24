@@ -22,7 +22,8 @@ export default function HomeClient() {
   const dimRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
   const [revealed, setRevealed] = useState(false);
-  const [stage, setStage] = useState(0);
+  const bgRef = useRef<HTMLDivElement>(null);
+  const stageRef = useRef(0);
   const [skipLoader, setSkipLoader] = useState(false);
 
   // Scroll -> physics progress + background stage
@@ -40,7 +41,11 @@ export default function HomeClient() {
         const floor = window.innerWidth < 768 ? 0.42 : 0.62;
         dimRef.current.style.opacity = String(1 - (1 - floor) * t);
       }
-      setStage((s) => (s === next ? s : next));
+      // set the backdrop directly: a React state change here re-rendered the entire home page on every stage change
+      if (next !== stageRef.current && bgRef.current) {
+        stageRef.current = next;
+        bgRef.current.style.background = GRADIENTS[next];
+      }
     };
     const onScroll = () => {
       if (!raf) raf = requestAnimationFrame(update);
@@ -104,13 +109,12 @@ export default function HomeClient() {
     setRevealed(true);
   }, []);
 
-  const bg = GRADIENTS[stage];
-
   return (
     <main className="relative">
       <div
         className="fixed inset-0 -z-10"
-        style={{ background: bg, transition: "background 1.2s cubic-bezier(0.65,0,0.35,1)" }}
+        ref={bgRef}
+        style={{ background: GRADIENTS[0], transition: "background 1.2s cubic-bezier(0.65,0,0.35,1)" }}
         aria-hidden="true"
       />
 

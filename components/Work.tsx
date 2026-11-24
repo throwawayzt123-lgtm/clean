@@ -12,7 +12,7 @@ const smooth = (a: number, b: number, x: number) => {
 /**
  * Scroll-pinned horizontal gallery. Vertical scroll drives the track sideways. Photos arrive dusty and
  * blurred and get "cleaned" as they reach the centre of the screen (dust fades, polish glint sweeps across,
- * sparkles + a small water splash fire the first time a photo turns spotless).
+ * a small ball splash fire the first time a photo turns spotless).
  */
 // newest 8 projects feature in the pinned strip; the Gallery page shows them all
 const FEATURED = WORK.slice(0, 8);
@@ -48,20 +48,23 @@ export default function Work() {
 
     const update = () => {
       pending = false;
-      const top = outer.offsetTop;
       // page-relative scroll through the pinned section
       const rect = outer.getBoundingClientRect();
+      // far off-screen: skip all the per-card measuring and styling
+      if (rect.top > vh * 1.5 || rect.bottom < -vh * 0.5) return;
       const p = Math.min(1, Math.max(0, -rect.top / Math.max(1, distance)));
       const x = -p * distance;
       track.style.transform = `translate3d(${x}px,0,0)`;
       if (barRef.current) barRef.current.style.transform = `scaleX(${p})`;
-      void top;
 
       const inView = rect.top < vh && rect.bottom > 0;
+      // read every card position first, then write styles (interleaving them forces a layout per card)
+      const rects = cardRefs.current.map((c) => (c ? c.getBoundingClientRect() : null));
       for (let i = 0; i < FEATURED.length; i++) {
-        const card = cardRefs.current[i];
-        if (!card) continue;
-        const cr = card.getBoundingClientRect();
+        const cr = rects[i];
+        if (!cr) continue;
+        // cards well outside the screen need no per-frame styling
+        if (cr.right < -vw * 0.3 || cr.left > vw * 1.3) continue;
         const cx = cr.left + cr.width / 2;
         const d = Math.abs(cx - vw / 2) / (vw * 0.34);
         const clean = 1 - smooth(0.12, 1, d); // 1 at centre → 0 at the sides
@@ -69,7 +72,6 @@ export default function Work() {
 
         const img = imgRefs.current[i];
         if (img) {
-          img.style.filter = `grayscale(${dust * 0.55}) sepia(${dust * 0.45}) blur(${dust * 5}px) brightness(${1 - dust * 0.1}) contrast(${1 + clean * 0.06})`;
           img.style.transform = `scale(${1.06 - clean * 0.05})`;
         }
         const dl = dustRefs.current[i];
@@ -90,8 +92,6 @@ export default function Work() {
         if (inView) {
           if (clean > 0.9 && !cleaned[i]) {
             cleaned[i] = true;
-            fx.sparkle(cr.right - cr.width * 0.18, cr.top + cr.height * 0.16, 4);
-            fx.sparkle(cr.left + cr.width * 0.2, cr.top + cr.height * 0.6, 3);
             fx.splash(cx, cr.bottom - 6, 12, 0.55);
           } else if (clean < 0.35) {
             cleaned[i] = false;
@@ -158,7 +158,9 @@ export default function Work() {
                   ref={(el) => { imgRefs.current[i] = el; }}
                   src={w.src}
                   alt={`${w.tag} cleaning project — ${w.place}`}
-                  className="absolute inset-0 w-full h-full object-cover will-change-[filter,transform]"
+                  className="absolute inset-0 w-full h-full object-cover will-change-transform"
+                  loading="lazy"
+                  decoding="async"
                   draggable={false}
                 />
                 <div ref={(el) => { dustRefs.current[i] = el; }} className="dust-layer absolute inset-0 pointer-events-none" />

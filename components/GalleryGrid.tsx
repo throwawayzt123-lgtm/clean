@@ -112,7 +112,7 @@ export default function GalleryGrid() {
 
       {cur && (
         <div
-          className="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex items-center justify-center p-4 md:p-10"
+          className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 md:p-10"
           role="dialog"
           aria-modal="true"
           aria-label="Project photo"

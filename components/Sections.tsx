@@ -108,7 +108,7 @@ export function Shape() {
         <div className="mt-7 flex flex-col gap-3">
           {PROCESS.map((p, i) => (
             <Reveal key={p.n} delay={0.22 + i * 0.07}>
-              <div className="group/card flex items-center gap-4 pl-3 pr-5 py-3 rounded-full border border-white/10 bg-[#0c0c0c]/85 backdrop-blur-md hover:border-volt/60 transition-colors">
+              <div className="group/card flex items-center gap-4 pl-3 pr-5 py-3 rounded-full border border-white/10 bg-[#0c0c0c]/85 hover:border-volt/60 transition-colors">
                 <span className="w-11 h-11 shrink-0 rounded-full bg-volt text-black flex items-center justify-center font-mono text-[12px] font-bold">{p.n}</span>
                 <div>
                   <p className="font-display text-[16px] font-semibold text-white leading-tight">{p.title}</p>
@@ -141,7 +141,7 @@ export function Release() {
         </Reveal>
         <Reveal delay={0.34} className="mt-10 grid grid-cols-2 md:grid-cols-4 gap-3">
           {STATS.map((s) => (
-            <div key={s.label} className="rounded-2xl border border-white/10 bg-[#0c0c0c]/85 backdrop-blur-md px-4 py-5">
+            <div key={s.label} className="rounded-2xl border border-white/10 bg-[#0c0c0c]/85 px-4 py-5">
               <p className="font-display text-3xl md:text-4xl font-semibold text-volt">{s.value}</p>
               <p className="font-mono uppercase text-white/50 mt-1.5" style={{ fontSize: 9, letterSpacing: "0.15em" }}>{s.label}</p>
             </div>

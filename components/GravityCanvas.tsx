@@ -1,6 +1,5 @@
 "use client";
 import { useEffect, useRef } from "react";
-import { createGravityScene } from "@/lib/gravityScene";
 import { control, mousePos } from "@/lib/shared";
 
 // Remounted (via `key` on ballColor) to fully rebuild the scene on palette change.
@@ -14,14 +13,24 @@ export default function GravityCanvas({ ballColor, onReady }: { ballColor: strin
     const container = containerRef.current;
     const canvas = canvasRef.current;
     if (!container || !canvas) return;
-    return createGravityScene({
-      canvas,
-      container,
-      ballColor,
-      control,
-      mousePos,
-      onReady: () => readyRef.current(),
+    // three.js is loaded on demand so it never blocks the first paint / hydration of the page
+    let stop: (() => void) | undefined;
+    let cancelled = false;
+    import("@/lib/gravityScene").then(({ createGravityScene }) => {
+      if (cancelled) return;
+      stop = createGravityScene({
+        canvas,
+        container,
+        ballColor,
+        control,
+        mousePos,
+        onReady: () => readyRef.current(),
+      });
     });
+    return () => {
+      cancelled = true;
+      stop?.();
+    };
   }, [ballColor]);
 
   return (
